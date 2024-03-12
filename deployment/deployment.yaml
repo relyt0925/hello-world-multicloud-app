@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: List
+metadata:
+  name: sample-app-list-1
+items:
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: sample-app-1
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: sample-app-1
+      namespace: sample-app-1
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      name: restricted-scc-use
+      namespace: sample-app-1
+    rules:
+      - apiGroups:
+          - security.openshift.io
+        resourceNames:
+          - restricted
+        resources:
+          - securitycontextconstraints
+        verbs:
+          - use
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: restricted-scc-use
+      namespace: sample-app-1
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: restricted-scc-use
+    subjects:
+      - kind: ServiceAccount
+        name: sample-app-1
+        namespace: sample-app-1
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app: sample-app-1
+      name: sample-app-1
+      namespace: sample-app-1
+    spec:
+      ports:
+        - port: 80
+          protocol: TCP
+          targetPort: 20000
+      selector:
+        app: sample-app-1
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: sample-app-1
+      namespace: sample-app-1
+    spec:
+      port:
+        targetPort: 20000
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: sample-app-1
+        weight: 100
+      wildcardPolicy: None
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: sample-app-1
+      name: sample-app-1
+      namespace: sample-app-1
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: sample-app-1
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+        type: RollingUpdate
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: sample-app-1
+        spec:
+          serviceAccount: sample-app-1
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - sample-app-1
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - image: "${FULL_IMAGE_TAG}"
+              name: sample-app-1
+              command: [ "./bin/main"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 10M
+              ports:
+                - containerPort: 20000
