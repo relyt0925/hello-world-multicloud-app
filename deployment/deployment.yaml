@@ -106,7 +106,7 @@ items:
                           - sample-app-1
                   topologyKey: kubernetes.io/hostname
           containers:
-            - image: "${FULL_IMAGE_TAG}"
+            - image: "${FULL_IMAGE_NAME}"
               name: sample-app-1
               command: [ "./bin/main"]
               resources:
