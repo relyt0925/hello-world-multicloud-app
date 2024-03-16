@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-dnf install git make  -y
-podman system reset -f
-podman system migrate
-podman unshare
+dnf install git make gettext  -y
 mknod /dev/fuse c 10 229
 chmod 666 /dev/fuse
 sed -i "s/^mount_program.*/#mount_program/g" /etc/containers/storage.conf
